@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR Strategy — Serious Game M1 GRH</title>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗
+     ║  CONFIGURATION FIREBASE — à remplir avant utilisation       ║
+     ║  1. Allez sur https://console.firebase.google.com           ║
+     ║  2. Créez un projet (ex : "hr-strategy-m1grh")              ║
+     ║  3. Ajoutez une app Web (icône </>)                          ║
+     ║  4. Copiez votre config ci-dessous                          ║
+     ║  5. Activez "Realtime Database" dans le menu Firebase       ║
+     ║     → Choisissez "Démarrer en mode test" (30 jours)         ║
+     ╚══════════════════════════════════════════════════════════════╝ -->
+<script>
+const firebase_Config = {
+  apiKey: "AIzaSyDcqYbHtX5rJCAFQrFEOyQnybrFt_-RP3E",
+  authDomain: "sgtest-6ea4a.firebaseapp.com",
+  databaseURL: "https://sgtest-6ea4a-default-rtdb.firebaseio.com",
+  projectId: "sgtest-6ea4a",
+  storageBucket: "sgtest-6ea4a.firebasestorage.app",
+  messagingSenderId: "746884499229",
+  appId: "1:746884499229:web:beda9438874b0ae86703f4"
+};
+// Mot de passe enseignant (modifiable)
+const PASS = "PROF2024";
+</script>
+
+<!-- Firebase SDK chargé dynamiquement après vérification de la config -->
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f1efe8;color:#1a1a18;min-height:100vh}
+:root{
+  --bg1:#ffffff;--bg2:#f1efe8;--bg3:#e8e6df;
+  --bgi:#e6f1fb;--bgs:#eaf3de;--bgd:#fcebeb;--bgw:#faeeda;
+  --tx1:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;
+  --txi:#0c447c;--txs:#27500a;--txd:#791f1f;--txw:#633806;
+  --bd3:rgba(26,26,24,.15);--bd2:rgba(26,26,24,.3);--bd1:rgba(26,26,24,.4);
+  --bdi:rgba(24,95,165,.4);--bds:rgba(59,109,17,.4);--bdd:rgba(163,45,45,.4);--bdw:rgba(133,79,11,.4);
+  --r1:8px;--r2:12px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg1:#1e1e1c;--bg2:#2a2a28;--bg3:#141412;
+  --bgi:#042c53;--bgs:#173404;--bgd:#501313;--bgw:#412402;
+  --tx1:#e8e6df;--tx2:#b4b2a9;--tx3:#888780;
+  --txi:#85b7eb;--txs:#c0dd97;--txd:#f09595;--txw:#fac775;
+  --bd3:rgba(232,230,223,.15);--bd2:rgba(232,230,223,.3);--bd1:rgba(232,230,223,.4);
+  --bdi:rgba(133,183,235,.4);--bds:rgba(192,221,151,.4);--bdd:rgba(240,149,149,.4);--bdw:rgba(250,199,117,.4);
+}}
+.card{background:var(--bg1);border:.5px solid var(--bd3);border-radius:var(--r2);padding:1.25rem}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:.45rem 1rem;border:.5px solid var(--bd2);border-radius:var(--r1);background:transparent;color:var(--tx1);font-size:13px;cursor:pointer;transition:background .15s;font-family:inherit;line-height:1.3}
+.btn:hover:not([disabled]){background:var(--bg2)}
+.btn[disabled]{opacity:.4;cursor:default}
+.btn.pri{background:var(--tx1);color:var(--bg1);border-color:transparent}
+.btn.pri:hover:not([disabled]){opacity:.85}
+.btn.suc{background:var(--bgs);color:var(--txs);border-color:var(--bds)}
+.btn.dan{background:var(--bgd);color:var(--txd);border-color:var(--bdd)}
+.btn.warn{background:var(--bgw);color:var(--txw);border-color:var(--bdw)}
+.choice{width:100%;text-align:left;padding:.65rem .9rem;background:var(--bg2);border:.5px solid var(--bd3);border-radius:var(--r1);cursor:pointer;font-size:13px;color:var(--tx1);line-height:1.5;transition:all .15s;margin-bottom:6px;font-family:inherit}
+.choice:hover{border-color:var(--bd1)}
+.choice.sel{border-color:var(--bdi);background:var(--bgi);color:var(--txi)}
+.choice[disabled]{cursor:default;opacity:.65}
+.acc-head{padding:.8rem 1rem;cursor:pointer;display:flex;align-items:center;gap:8px;background:var(--bg1);border-bottom:.5px solid var(--bd3);user-select:none}
+.acc-head:hover{background:var(--bg2)}
+.acc-head.done{background:var(--bgs)}
+.kbar-bg{background:var(--bg2);border-radius:99px;height:5px;overflow:hidden;margin-top:3px}
+.kbar{height:5px;border-radius:99px;transition:width .5s}
+.lb-row{padding:.55rem 0;border-bottom:.5px solid var(--bd3);display:flex;align-items:center;gap:10px;font-size:13px}
+.lb-row:last-child{border-bottom:none}
+.tag{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px}
+input[type=text],input[type=password]{padding:.5rem .75rem;border:.5px solid var(--bd2);border-radius:var(--r1);font-size:14px;background:var(--bg2);color:var(--tx1);outline:none;font-family:inherit;width:100%}
+input:focus{border-color:var(--bd1)}
+.slide-in{animation:si .3s ease}
+@keyframes si{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--bd2);border-top-color:var(--tx1);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="R" style="min-height:100vh;padding:1.25rem;background:var(--bg3)"></div>
+
+<script>
+// ── VÉRIFICATION CONFIG ────────────────────────────────────────────────
+const CONFIG_OK = FIREBASE_CONFIG.apiKey !== "VOTRE_API_KEY" && FIREBASE_CONFIG.apiKey !== "";
+
+// ── DONNÉES DU JEU ─────────────────────────────────────────────────────
+const KD=[{k:'b',l:'Budget RH',c:'#1D9E75'},{k:'c',l:'Climat Social',c:'#185FA5'},{k:'p',l:'Performance',c:'#BA7517'},{k:'r',l:'Rétention',c:'#534AB7'},{k:'m',l:'Marque',c:'#993556'}];
+const IK={b:70,c:50,p:50,r:60,m:45};
+const TN=['Recrutement','Formation','Rémunération','QVT','Relations Sociales','GPEC','Diversité & Inclusion','Mobilité Interne'];
+const TI=['👥','📚','💶','🌿','🤝','🔮','🌈','🚀'];
+const GK='hrg_game';
+const TK='hrg_teams';
+
+const SC=[
+[{t:"Guerre des talents : 5 postes non pourvus",x:"Depuis 6 semaines, vos offres restent sans réponse. Les concurrents avancent.",ch:[
+{l:"Packages +20% au-dessus du marché",e:[-12,2,8,5,6],f:"Attire les profils mais grève le budget et crée des inégalités.",risky:0},
+{l:"Programme alternance avec écoles partenaires",e:[-4,5,3,9,8],f:"Pari long terme qui fidélise et valorise la marque.",risky:0},
+{l:"Cooptation interne avec prime 3 000€",e:[-5,8,5,6,4],f:"Fort engagement interne, bonne qualité de recrutement.",risky:0},
+{l:"Prestation offshore temporaire",e:[-3,-4,4,-3,-5],f:"Économique mais fragilise la cohésion.",risky:0}]},
+{t:"Plan formation à arbitrer en CODIR",x:"Vous disposez d'un budget et devez arbitrer entre plusieurs axes.",ch:[
+{l:"Plateforme LMS interne",e:[-8,3,7,6,5],f:"Investissement durable qui monte les compétences digitales.",risky:0},
+{l:"Binômes de mentorat intergénérationnel",e:[-1,10,4,8,4],f:"Valorise les seniors et engage fortement les juniors.",risky:0},
+{l:"Formations courtes ciblées sur les gaps",e:[-5,4,6,5,3],f:"Efficace et réaliste, bonne couverture des besoins.",risky:0},
+{l:"Formations obligatoires uniquement",e:[2,-3,4,2,0],f:"Sécurisé mais ne crée pas d'enthousiasme.",risky:0}]},
+{t:"Première NAO — délégués demandent +4%",x:"L'enveloppe allouée est de 2,5%. Les OS attendent un geste concret.",ch:[
+{l:"Concentrer sur les 3 premières tranches salariales",e:[-7,8,3,5,7],f:"Signal social fort, très apprécié des IRP.",risky:0},
+{l:"2,5% uniformément à tous",e:[-7,4,2,3,2],f:"Simple et équitable, insuffisant pour les OS les plus revendicatifs.",risky:0},
+{l:"Variables de performance en complément",e:[-6,-2,9,2,1],f:"Dynamise la performance mais fragilise le sentiment de sécurité.",risky:0},
+{l:"Reporter la NAO de 3 mois",e:[0,-8,-2,-5,-5],f:"Stratégie d'évitement qui détériore le dialogue social.",risky:0}]},
+{t:"Baromètre social : 56/100",x:"Charge de travail et manque de reconnaissance sont les 2 premiers irritants.",ch:[
+{l:"Plan QVT complet : flex, télétravail, soutien psy",e:[-10,12,4,10,8],f:"Transformation profonde, fort impact sur le bien-être.",risky:0},
+{l:"Entretiens ciblés dans les équipes à risque",e:[-3,7,2,6,3],f:"Approche humaine et ciblée, bien reconnue.",risky:0},
+{l:"Ateliers charge de travail avec les managers",e:[-2,5,3,4,2],f:"Utile mais perçu comme insuffisant.",risky:0},
+{l:"Enquête complémentaire avant toute action",e:[-1,-4,-1,-3,-2],f:"L'inaction perçue aggrave le sentiment.",risky:0}]},
+{t:"CSE nouvellement élu : première réunion",x:"L'ambiance est constructive, les élus posent des questions sur la stratégie.",ch:[
+{l:"Partager la roadmap stratégique complète",e:[0,10,2,5,6],f:"Confiance installée dès le départ.",risky:0},
+{l:"Proposer des groupes de travail paritaires",e:[-2,8,3,4,5],f:"Co-construction qui engage les élus positivement.",risky:0},
+{l:"Répondre uniquement aux obligations légales",e:[0,-5,0,-2,-4],f:"Posture défensive qui installe une relation froide.",risky:0},
+{l:"Mandater un avocat pour cadrer les échanges",e:[-4,-8,-2,-4,-6],f:"Judiciarisation immédiate très mal vécue.",risky:0}]},
+{t:"Audit compétences : 30% de gaps identifiés",x:"La direction attend un plan d'action face aux écarts identifiés.",ch:[
+{l:"Plan de développement individuel pour tous",e:[-8,7,6,8,6],f:"Ambitieux et mobilisant, renforce le capital humain.",risky:0},
+{l:"Certifications internes valorisantes",e:[-6,6,5,9,7],f:"Valorise les parcours, excellent outil de rétention.",risky:0},
+{l:"Cibler uniquement les postes critiques",e:[-5,3,8,5,3],f:"Efficace mais perçu comme discriminant.",risky:0},
+{l:"Externaliser via intérim les postes en gap",e:[-4,-4,5,-5,-3],f:"Palliatif court terme, nuit à la fidélisation.",risky:0}]},
+{t:"Index égalité F/H publié : 72/100",x:"Sous la moyenne sectorielle (78). La presse locale en parle.",ch:[
+{l:"Plan d'action égalité F/H sur 3 ans",e:[-6,7,3,6,10],f:"Démarche sérieuse et crédible.",risky:0},
+{l:"Former les managers aux biais inconscients",e:[-4,5,2,5,6],f:"Bon levier culturel, mais ne règle pas les écarts salariaux.",risky:0},
+{l:"Corriger uniquement les écarts les plus visibles",e:[-5,2,2,3,4],f:"Partiel, perçu comme le minimum syndical.",risky:0},
+{l:"Communiqué d'engagement sans plan précis",e:[-1,-3,0,-2,-7],f:"Le greenwashing RH est vite détecté.",risky:0}]},
+{t:"3 talents demandent une mobilité interne",x:"Leurs managers actuels s'y opposent discrètement.",ch:[
+{l:"Politique de mobilité avec priorité interne",e:[-4,7,5,10,7],f:"Signal fort qui aligne l'organisation.",risky:0},
+{l:"Intégrer la mobilité dans les objectifs managers",e:[-2,5,5,7,5],f:"Levier structurel qui aligne les intérêts.",risky:0},
+{l:"Traiter au cas par cas avec les managers",e:[-1,2,3,4,2],f:"Pragmatique mais sans vision globale.",risky:0},
+{l:"Refuser les 3 mobilités pour stabilité d'équipe",e:[0,-7,-3,-8,-5],f:"Les talents risquent de partir — signal très négatif.",risky:0}]}],
+[{t:"Marque employeur : 40% de refus d'offres",x:"Les candidats déclinent malgré des packages corrects. Avis Glassdoor dégradés.",ch:[
+{l:"Salariés ambassadeurs + programme témoignages",e:[-2,8,2,5,8],f:"Authenticité et engagement interne, très bien perçu.",risky:0},
+{l:"Revoir l'expérience candidat de A à Z",e:[-6,2,4,6,9],f:"Améliore durablement le taux d'acceptation.",risky:0},
+{l:"Campagne marque employeur digitale",e:[-8,3,2,4,12],f:"Fort impact externe, résultats en 3 à 6 mois.",risky:0},
+{l:"Réduire les exigences + former ensuite",e:[-5,-2,-4,3,-3],f:"Risqué : qualité en baisse, charge formation augmente.",risky:1}]},
+{t:"OPCO refuse 60% du plan formation",x:"200 000€ non remboursés. La direction veut couper le plan.",ch:[
+{l:"Former en interne via les experts maison",e:[-3,7,6,8,5],f:"Innovation pédagogique valorisante pour les formateurs.",risky:0},
+{l:"Négocier un plan alternatif via un autre OPCO",e:[-5,3,5,5,4],f:"Solution équilibrée, prend du temps mais fonctionne.",risky:0},
+{l:"Maintenir le plan sur fonds propres",e:[-14,6,8,7,5],f:"Courageux, mais le budget est fortement mis sous tension.",risky:1},
+{l:"Réduire aux formations obligatoires",e:[4,-6,-5,-5,-4],f:"L'économie est réelle mais la stagnation pèse.",risky:0}]},
+{t:"Inflation 4% : pétition interne en circulation",x:"La direction demande une solution créative sans augmenter la masse salariale.",ch:[
+{l:"Accord d'intéressement lié aux résultats",e:[-5,5,10,5,6],f:"Associe les salariés aux résultats — fort levier.",risky:0},
+{l:"Avantages en nature (tickets, mutuelle améliorée)",e:[-6,4,2,4,4],f:"Appréciés mais ne compensent pas la perte de pouvoir d'achat.",risky:0},
+{l:"1,5% d'augmentation générale immédiate",e:[-8,6,3,4,3],f:"Geste concret mais insuffisant face à l'inflation.",risky:0},
+{l:"Ouvrir une NAO sans garantie de résultat",e:[-2,-4,0,-3,-2],f:"L'incertitude prolongée est vécue comme temporisation.",risky:0}]},
+{t:"2 arrêts RPS dans la même équipe",x:"La CSSCT est alertée. L'inspection du travail annonce une visite.",ch:[
+{l:"Audit RPS externe + plan d'action immédiat",e:[-10,8,2,7,6],f:"Traitement professionnel, signal fort envoyé à tous.",risky:0},
+{l:"Médiation avec un médiateur interne",e:[-3,6,2,5,3],f:"Rapide mais risque de sous-évaluer la gravité.",risky:0},
+{l:"Reconstitution d'équipe + mutation du manager",e:[-5,4,3,3,2],f:"Visible mais peut être perçu comme expéditif.",risky:0},
+{l:"Attendre le retour des salariés pour analyser",e:[0,-10,-4,-7,-6],f:"L'inaction aggrave et expose légalement.",risky:0}]},
+{t:"Grève surprise : prime d'équipe supprimée",x:"Motif : une prime supprimée sans concertation il y a 3 semaines.",ch:[
+{l:"Suspendre la décision + ouvrir des négociations",e:[-4,9,-2,5,4],f:"La suspension désamorce rapidement la crise.",risky:0},
+{l:"Assemblée générale avec toutes les équipes",e:[-2,7,1,4,5],f:"Transparence bien accueillie, désamorce en éclairant.",risky:0},
+{l:"Proposer une compensation sous une autre forme",e:[-6,5,2,3,3],f:"Compromis qui débloque sans renier totalement.",risky:0},
+{l:"Maintenir la décision et expliquer les raisons",e:[2,-10,-5,-6,-7],f:"L'intransigeance prolonge la grève.",risky:0}]},
+{t:"Réorganisation imposée en 60 jours",x:"3 départements concernés. Des postes changent, certains supprimés, d'autres créés.",ch:[
+{l:"Cartographier les compétences + reclassement ciblé",e:[-8,7,4,7,6],f:"Approche humaine qui préserve les talents.",risky:0},
+{l:"Créer une cellule RH dédiée à la transition",e:[-10,6,5,6,5],f:"Structure de soutien qui rassure les salariés.",risky:0},
+{l:"Négocier 90 jours supplémentaires avec la DG",e:[-2,5,-2,4,3],f:"Plus de temps, mais la direction est impatiente.",risky:0},
+{l:"Appliquer la réorg sans accompagnement",e:[0,-8,2,-6,-5],f:"Rapidité d'exécution mais dommages humains importants.",risky:0}]},
+{t:"Plainte discrimination à l'embauche",x:"Un candidat non retenu saisit l'inspection. Les faits sont ambigus.",ch:[
+{l:"Audit complet des processus de recrutement",e:[-7,4,2,5,7],f:"Transforme l'incident en opportunité structurelle.",risky:0},
+{l:"Rencontrer le candidat en médiation directe",e:[-2,6,1,2,6],f:"Geste humain qui peut désamorcer la procédure.",risky:0},
+{l:"Former tous les recruteurs aux critères objectifs",e:[-4,4,2,3,5],f:"Bonne action préventive.",risky:0},
+{l:"Répondre via les avocats uniquement",e:[-5,-3,0,0,-4],f:"Défensif, n'améliore rien en interne.",risky:0}]},
+{t:"Manager bloque une mobilité validée par la RH",x:"La collaboratrice menace de démissionner si bloquée encore.",ch:[
+{l:"Imposer la mobilité avec passation de 4 semaines",e:[-3,6,2,8,6],f:"La RH tient sa parole, protège le projet professionnel.",risky:0},
+{l:"Médiation tripartite RH/Manager/Collaboratrice",e:[-2,5,2,5,4],f:"Solution négociée qui préserve toutes les relations.",risky:0},
+{l:"Recruter en externe pour libérer la collaboratrice",e:[-7,4,3,6,3],f:"Coûteux mais débloque et valorise la politique.",risky:1},
+{l:"Reporter de 3 mois pour protéger le projet en cours",e:[0,-4,2,-5,-3],f:"Elle peut démissionner — signal négatif.",risky:0}]}],
+[{t:"Débauchage : un concurrent recrute 8 de vos profils",x:"3 ingénieurs ont déjà accepté. 5 autres hésitent encore.",ch:[
+{l:"Entretiens de rétention individuels",e:[-4,8,3,7,5],f:"Humain, fidélise sans créer d'inflation salariale.",risky:0},
+{l:"Valoriser projets internes et mission d'entreprise",e:[-3,6,4,6,7],f:"Efficace sur les profils vraiment engagés.",risky:0},
+{l:"Programme top talents visible et valorisant",e:[-7,5,5,9,7],f:"Signal fort d'investissement dans les talents.",risky:0},
+{l:"Contre-offres immédiates sur les 8 profils",e:[-15,5,6,8,3],f:"Efficace mais crée des inégalités internes durables.",risky:1}]},
+{t:"Refus formation sécurité obligatoire",x:"Un salarié argue d'un conflit avec le formateur. Sa hiérarchie le soutient.",ch:[
+{l:"Proposer la formation avec un autre organisme",e:[-4,5,2,3,3],f:"Pragmatique, contourne le conflit et atteint l'objectif.",risky:0},
+{l:"Médiation avec le formateur pour comprendre le conflit",e:[-2,7,1,4,3],f:"Traite la cause, peut résoudre d'autres tensions.",risky:0},
+{l:"Médecin du travail + mise en demeure progressive",e:[-3,-3,1,0,2],f:"Procédure rigoureuse qui protège légalement.",risky:0},
+{l:"Sanction disciplinaire immédiate",e:[-2,-7,0,-4,-3],f:"Légalement possible mais excessivement escaladant.",risky:0}]},
+{t:"Écart salarial F/H médiatisé — 2 000 partages",x:"L'article cite des chiffres internes réels. La DG attend votre réponse.",ch:[
+{l:"Communiqué de transparence + plan correctif immédiat",e:[-10,5,0,4,8],f:"Gestion de crise exemplaire qui retourne la situation.",risky:0},
+{l:"Recruter un Chief People Officer pour gérer la crise",e:[-8,2,2,3,6],f:"Signal fort de prise au sérieux.",risky:1},
+{l:"Réponse factuelle sur les raisons des écarts",e:[-2,0,0,1,-4],f:"Légitime mais sans actions concrètes.",risky:0},
+{l:"Ignorer et laisser passer la polémique",e:[0,-8,-3,-5,-12],f:"L'absence de réaction aggrave massivement.",risky:0}]},
+{t:"Accident du travail grave — CSSCT convoquée",x:"L'inspection du travail annonce une visite. Votre DUER date de 2 ans.",ch:[
+{l:"Mise à jour immédiate DUER + plan de prévention",e:[-9,5,1,4,4],f:"Priorité réglementaire qui protège légalement.",risky:0},
+{l:"Coopération totale avec l'inspection du travail",e:[-4,6,0,3,5],f:"Transparence proactive bien perçue.",risky:0},
+{l:"Communication rassurante en interne avant tout",e:[-2,3,-1,2,-2],f:"Nécessaire mais insuffisant seul.",risky:0},
+{l:"Déléguer la gestion à l'assurance de l'entreprise",e:[-5,-3,0,-2,-3],f:"Perçu comme un désengagement par les équipes.",risky:0}]},
+{t:"CGT quitte la table des NAO — préavis de grève",x:"Les autres OS restent à la table. La CGT saisit aussi l'inspection.",ch:[
+{l:"Médiateur externe neutre pour reprendre le dialogue",e:[-5,8,-1,4,5],f:"La médiation extérieure débloque ce que la pression fige.",risky:0},
+{l:"Réunion extraordinaire avec la direction générale",e:[-2,6,1,3,4],f:"L'engagement de la DG est perçu comme un signal fort.",risky:0},
+{l:"Proposition améliorée aux autres OS sans la CGT",e:[-7,4,2,3,3],f:"Avance sans la CGT, risque de fragiliser la légitimité.",risky:0},
+{l:"Attendre la fin du préavis de grève",e:[0,-8,-4,-4,-6],f:"L'attente passive laisse la situation se dégrader.",risky:0}]},
+{t:"Rachat partiel annoncé : 40 postes menacés",x:"Aucune information officielle mais les rumeurs font rage.",ch:[
+{l:"Communiquer proactivement même avec peu d'info",e:[-2,9,0,6,5],f:"La transparence partielle vaut mieux que le vide.",risky:0},
+{l:"Lancer un plan de reclassement interne préventif",e:[-8,6,4,7,5],f:"Proactif et humain, signal fort de responsabilité sociale.",risky:0},
+{l:"Préparer discrètement un PSE préventif",e:[-10,-3,2,-5,-4],f:"Utile — mais si ça fuite, l'impact est catastrophique.",risky:1},
+{l:"Attendre la décision finale avant toute communication",e:[0,-10,-3,-7,-6],f:"Le silence dans l'incertitude est le pire des messages.",risky:0}]},
+{t:"Harcèlement moral : plainte contre un manager clé",x:"Les faits semblent crédibles. La direction hésite à suspendre cet élément performant.",ch:[
+{l:"Enquête contradictoire + suspension conservatoire",e:[-8,4,-3,5,7],f:"Procédure rigoureuse qui protège la plaignante et l'entreprise.",risky:0},
+{l:"Traitement via le service juridique uniquement",e:[-4,-2,0,1,-3],f:"Correct légalement mais déshumanisé.",risky:0},
+{l:"Médiation directe entre les deux parties",e:[-3,-3,0,2,-4],f:"Inadaptée au harcèlement, peut victimiser davantage.",risky:0},
+{l:"Protéger le manager pour préserver la performance",e:[0,-12,2,-8,-10],f:"Faute managériale grave : risque légal majeur.",risky:0}]},
+{t:"3 hauts potentiels fuient vers la concurrence",x:"Aucun n'a eu d'entretien de rétention. Les managers ne vous ont pas alerté.",ch:[
+{l:"Former les managers à détecter les signaux faibles",e:[-4,6,3,7,5],f:"Investissement préventif structurel, efficace à moyen terme.",risky:0},
+{l:"Programme top talents visible et valorisant",e:[-7,5,5,9,7],f:"Signal fort d'investissement dans les talents.",risky:0},
+{l:"Entretiens de départ systématiques + restitution CODIR",e:[-3,5,2,4,5],f:"La connaissance des causes est la base de toute rétention.",risky:0},
+{l:"Revoir la rémunération des hauts potentiels",e:[-12,4,5,8,4],f:"Direct sur la cause principale mais très coûteux.",risky:1}]}],
+[{t:"Recruter le DRH d'un concurrent majeur",x:"Son arrivée boosterait la marque employeur mais créerait une jalousie interne.",ch:[
+{l:"Promouvoir un interne à ce poste à la place",e:[-5,9,4,10,5],f:"Message fort sur la méritocratie, mobilise les équipes.",risky:0},
+{l:"Poste conseil senior sans responsabilité hiérarchique",e:[-8,2,5,2,9],f:"Compromis intelligent qui tire profit de l'expertise.",risky:0},
+{l:"Recruter avec package attractif + intégration renforcée",e:[-14,-3,7,3,15],f:"Coup d'éclat externe mais risque de démotiver les internes.",risky:1},
+{l:"Ne pas donner suite — préserver la culture",e:[0,4,-2,3,-3],f:"Cohérence préservée mais opportunité stratégique manquée.",risky:0}]},
+{t:"Financement OPCO inattendu : 150 000€",x:"Budget formation à utiliser dans 60 jours. Carte blanche.",ch:[
+{l:"Leadership et management pour les 30 managers",e:[-3,7,8,7,8],f:"Investissement qui démultiplie l'impact via le management.",risky:0},
+{l:"Certification data/IA pour 50 collaborateurs clés",e:[-3,5,12,8,10],f:"Positionnement stratégique fort sur les compétences futures.",risky:0},
+{l:"Soft skills inclusifs pour tous les salariés",e:[-3,8,4,6,6],f:"Apprécié de tous, impact diffus sur la performance.",risky:0},
+{l:"Formations individualisées selon besoins déclarés",e:[-3,6,6,9,5],f:"Personnalisation forte, très bien perçue pour la rétention.",risky:0}]},
+{t:"Intéressement record : prime moyenne 3 200€",x:"Les syndicats veulent aller encore plus loin.",ch:[
+{l:"Signer l'accord tel quel rapidement",e:[-10,7,8,7,7],f:"Signal concret et visible de partage de la valeur.",risky:0},
+{l:"Négocier participation en plus de l'intéressement",e:[-14,9,6,8,9],f:"Enveloppe maximale — modèle attractif mais engage durablement.",risky:1},
+{l:"Substituer par une épargne salariale abondée",e:[-8,5,5,9,6],f:"Long terme, favorise rétention et épargne.",risky:0},
+{l:"Cibler l'accord sur les bas salaires uniquement",e:[-9,8,4,6,10],f:"Justice sociale perçue, image RSE renforcée.",risky:0}]},
+{t:"Label Great Place to Work à 3 points",x:"Un effort ciblé sur 2 mois peut faire passer la barre — premier dans le secteur.",ch:[
+{l:"Plan intensif 2 mois : écoute, flex, reconnaissance",e:[-10,12,5,10,15],f:"Le label transforme la marque employeur durablement.",risky:1},
+{l:"Cibler uniquement les items les moins bien notés",e:[-5,6,4,6,8],f:"Chirurgical et efficace, sans disperser les efforts.",risky:0},
+{l:"Reporter la candidature à l'année prochaine",e:[0,2,1,2,1],f:"Prudence raisonnable mais occasion rare manquée.",risky:0},
+{l:"Laisser les managers piloter librement",e:[-2,4,3,4,3],f:"Responsabilisation managériale, résultats hétérogènes.",risky:0}]},
+{t:"Accord de méthode historique — 3 syndicats",x:"Co-construire toutes les réorganisations futures. Inédit dans l'histoire sociale.",ch:[
+{l:"Signer avec engagements fermes et calendrier précis",e:[-5,12,4,8,10],f:"Moment historique qui transforme les relations sociales.",risky:0},
+{l:"Signer avec clauses limitantes sur le périmètre",e:[-3,6,3,5,6],f:"Accord partiel mais réaliste.",risky:0},
+{l:"Demander 2 semaines de réflexion",e:[-1,2,1,2,1],f:"Prudence perçue comme hésitation.",risky:0},
+{l:"Refuser au nom de la prérogative RH",e:[2,-10,-3,-6,-8],f:"Ruine une opportunité historique.",risky:0}]},
+{t:"IA générative : 80 postes impactés en 12 mois",x:"Chance de transformation ou bombe sociale — tout dépend de la RH.",ch:[
+{l:"Déploiement progressif + formation continue en parallèle",e:[-9,7,8,8,8],f:"Rythme soutenable qui préserve l'humain dans la transformation.",risky:0},
+{l:"Reclassement garanti à 100% pour tous les postes impactés",e:[-15,10,7,12,12],f:"Modèle social exemplaire dans le secteur.",risky:1},
+{l:"Externaliser la reconversion à un cabinet spécialisé",e:[-7,2,5,-3,3],f:"Efficace mais perçu comme désengagement.",risky:0},
+{l:"Aucun accompagnement spécifique prévu",e:[0,-12,2,-10,-10],f:"Risque majeur de crise sociale.",risky:0}]},
+{t:"Prix national RH Diversité — candidature possible",x:"Jury national — visibilité nationale si nominé ou primé.",ch:[
+{l:"Candidater avec un dossier ambitieux et honnête",e:[-5,6,3,5,14],f:"Visibilité nationale exceptionnelle si primé.",risky:0},
+{l:"Consolider les pratiques D&I avant de candidater",e:[-4,5,2,4,8],f:"Prudence crédible qui renforce la démarche.",risky:0},
+{l:"Refuser, c'est encore trop tôt",e:[0,2,1,2,-2],f:"Humilité raisonnable mais benchmark manqué.",risky:0},
+{l:"Candidater en exagérant les actions menées",e:[-2,-5,0,-3,-10],f:"Si détecté, détruit durablement la crédibilité D&I.",risky:0}]},
+{t:"Fusion de 2 équipes : 15 reclassements en 30 jours",x:"6 postes supprimés, 9 nouveaux créés. Plan social ou mobilité interne ?",ch:[
+{l:"Mobilité interne pour les 15 + accompagnement RH",e:[-12,9,5,10,9],f:"Exemplaire socialement — transforme la fusion en opportunité.",risky:0},
+{l:"PSE pour les 6 + mobilité interne pour les 9",e:[-14,4,4,5,5],f:"Solution hybride rigoureuse.",risky:1},
+{l:"Reclassement sur postes ouverts sans garantie",e:[-5,-3,3,-4,-4],f:"Économique mais signal négatif.",risky:0},
+{l:"Ouvrir les 9 postes aussi à candidature externe",e:[-4,-5,6,-6,-2],f:"Contredit la priorité annoncée à la mobilité interne.",risky:0}]}]
+];
+
+const EVENTS=[
+{id:'ev_crise',label:'Crise sectorielle',desc:'Les leaders perdent plus, les équipes de queue rebondissent.',
+fn:ts=>[...ts].sort((a,b)=>sc(b.kpis)-sc(a.kpis)).map((t,i,arr)=>{
+  const d=i===0?[-10,-5,0,-5,-5]:i===arr.length-1?[5,10,0,5,5]:[-3,-2,0,-2,-2];
+  return{...t,kpis:ap(t.kpis,d)};
+})},
+{id:'ev_rebond',label:'Opportunité de rebond',desc:'Un label sectoriel récompense les équipes qui ont investi dans la marque employeur.',
+fn:ts=>[...ts].sort((a,b)=>sc(a.kpis)-sc(b.kpis)).map((t,i,arr)=>{
+  const d=i===0?[8,5,0,8,8]:i===arr.length-1?[-5,-3,0,-3,-3]:[2,2,0,2,2];
+  return{...t,kpis:ap(t.kpis,d)};
+})}
+];
+
+// ── UTILS ──────────────────────────────────────────────────────────────
+function sc(k){if(!k)return 0;return Math.round((k.b+k.c+k.p+k.r+k.m)/5)}
+function gr(s){
+  if(s>=88)return{l:'A+',t:'DRH Visionnaire',c:'#1D9E75'};
+  if(s>=72)return{l:'A',t:'Excellent DRH',c:'#3B6D11'};
+  if(s>=56)return{l:'B',t:'En bonne voie',c:'#185FA5'};
+  if(s>=40)return{l:'C',t:'À consolider',c:'#BA7517'};
+  return{l:'D',t:'Plan de redressement',c:'#A32D2D'}
+}
+function cl(v){return Math.max(0,Math.min(150,v))}
+function ap(kpis,e){const k={...kpis};['b','c','p','r','m'].forEach((key,i)=>{k[key]=cl((k[key]||0)+(e[i]||0))});return k}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function tKey(n){return n.replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,40)}
+
+// ── FIREBASE ───────────────────────────────────────────────────────────
+let db=null;
+
+function loadScript(src){
+  return new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src=src;s.onload=resolve;s.onerror=reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function initFirebase(){
+  if(!CONFIG_OK)return false;
+  try{
+    await loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
+    await loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js');
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db=firebase.database();
+    return true;
+  }catch(e){
+    console.error('Erreur Firebase:',e);
+    document.getElementById('R').innerHTML=`<div style="max-width:500px;margin:3rem auto">
+      <div style="background:var(--bgd);border:.5px solid var(--bdd);border-radius:var(--r2);padding:1.25rem">
+        <div style="font-size:13px;font-weight:500;color:var(--txd);margin-bottom:.5rem">Impossible de contacter Firebase</div>
+        <div style="font-size:13px;color:var(--txd);line-height:1.6">Vérifiez votre connexion internet et que l'URL <code>databaseURL</code> est correcte dans la config.</div>
+        <button onclick="location.reload()" style="margin-top:.75rem;padding:.4rem .9rem;border:.5px solid var(--bdd);border-radius:var(--r1);background:transparent;color:var(--txd);cursor:pointer;font-size:13px">Réessayer</button>
+      </div>
+    </div>`;
+    return false;
+  }
+}
+
+async function fbSet(path,val){
+  if(!db)return;
+  await db.ref(path).set(val);
+}
+async function fbGet(path){
+  if(!db)return null;
+  const snap=await db.ref(path).once('value');
+  return snap.val();
+}
+function fbListen(path,cb){
+  if(!db)return ()=>{};
+  const ref=db.ref(path);
+  ref.on('value',snap=>cb(snap.val()));
+  return ()=>ref.off('value');
+}
+async function fbUpdate(path,val){
+  if(!db)return;
+  await db.ref(path).update(val);
+}
+async function fbRemove(path){
+  if(!db)return;
+  await db.ref(path).remove();
+}
+
+// ── STATE ──────────────────────────────────────────────────────────────
+let S={
+  view:'welcome',
+  sName:'',sKpis:{...IK},
+  sChoices:Array(8).fill(-1),sOpen:0,sHistory:[],
+  sJokerUsed:false,sJokerMode:false,
+  sPhase:'wait',
+  game:{turn:0,open:false,evDone:{}},
+  allTeams:[],
+  tPhase:'login',tPass:'',tErr:'',
+  tReveal:-1,tShowDebrief:false,
+  err:'',unsubs:[]
+};
+
+function unsub(){S.unsubs.forEach(fn=>fn());S.unsubs=[];}
+
+async function saveTeam(){
+  await fbSet(TK+'/'+tKey(S.sName),{n:S.sName,kpis:S.sKpis,h:S.sHistory,j:S.sJokerUsed});
+}
+async function loadAllTeams(){
+  const data=await fbGet(TK);
+  if(!data){S.allTeams=[];return;}
+  S.allTeams=Object.values(data).filter(t=>t&&t.n).sort((a,b)=>sc(b.kpis)-sc(a.kpis));
+}
+async function saveGame(u){
+  S.game={...S.game,...u};
+  await fbSet(GK,S.game);
+}
+
+// ── KPI PANEL ──────────────────────────────────────────────────────────
+function kpiPanel(kpis,compact){
+  const s=sc(kpis);const g=gr(s);
+  return`<div style="font-size:${compact?20:28}px;font-weight:500">${s} <span style="font-size:12px;color:${g.c}">${g.l} ${g.t}</span></div>
+  <div style="margin-top:${compact?8:12}px">
+  ${KD.map(kd=>{const v=Math.round(kpis[kd.k]||0);const p=Math.min(100,(v/150)*100);return`<div style="margin-bottom:${compact?6:8}px">
+    <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span style="font-size:${compact?11:12}px;color:var(--tx2)">${kd.l}</span><span style="font-size:${compact?11:12}px;font-weight:500">${v}</span></div>
+    <div class="kbar-bg"><div class="kbar" style="width:${p}%;background:${kd.c}"></div></div>
+  </div>`;}).join('')}</div>`;
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────
+function render(){document.getElementById('R').innerHTML=html();setTimeout(attach,0)}
+
+function html(){
+  if(!CONFIG_OK)return vSetup();
+  if(S.view==='welcome')return vWelcome();
+  if(S.view==='teacher'){
+    if(S.tPhase==='login')return vTLogin();
+    if(S.tReveal>=0)return vTReveal();
+    if(S.tShowDebrief)return vTDebrief();
+    return vTDash();
+  }
+  if(S.view==='student'){
+    if(S.sPhase==='wait')return vSWait();
+    if(S.sPhase==='play')return vSPlay();
+    if(S.sPhase==='done')return vSDone();
+    if(S.sPhase==='recap')return vSRecap();
+  }
+  return '';
+}
+
+// ── SETUP SCREEN ───────────────────────────────────────────────────────
+function vSetup(){return`<div style="max-width:600px;margin:2rem auto">
+  <div style="background:var(--bgw);border:.5px solid var(--bdw);border-radius:var(--r2);padding:1.25rem;margin-bottom:1.5rem">
+    <div style="font-size:13px;font-weight:500;color:var(--txw);margin-bottom:.5rem">⚠ Configuration Firebase requise</div>
+    <div style="font-size:13px;color:var(--txw);line-height:1.6">Ouvrez ce fichier HTML dans un éditeur de texte et remplacez les valeurs <code>VOTRE_...</code> par votre configuration Firebase.</div>
+  </div>
+  <div class="card">
+    <div style="font-size:14px;font-weight:500;margin-bottom:1rem">Guide de configuration (5 min)</div>
+    ${[
+      ['1','Créer un projet Firebase','Allez sur <a href="https://console.firebase.google.com" target="_blank" style="color:var(--txi)">console.firebase.google.com</a> → "Ajouter un projet" → donnez-lui un nom (ex : hr-strategy-m1grh)'],
+      ['2','Ajouter une app Web','Dans votre projet → icône ⚙ → "Ajouter une application" → choisissez Web (</>)'],
+      ['3','Copier la config','Firebase vous affiche un objet <code>firebaseConfig</code> → copiez les valeurs dans ce fichier HTML (section FIREBASE_CONFIG en haut)'],
+      ['4','Activer Realtime Database','Menu gauche → "Build" → "Realtime Database" → "Créer une base de données" → choisissez une région Europe → "Démarrer en mode test"'],
+      ['5','Mettre à jour databaseURL','Copiez l\'URL affichée (ex : https://mon-projet-rtdb.europe-west1.firebasedatabase.app) dans le champ databaseURL de la config'],
+    ].map(([n,t,d])=>`<div style="display:flex;gap:12px;padding:.75rem 0;border-bottom:.5px solid var(--bd3)">
+      <div style="width:24px;height:24px;border-radius:50%;background:var(--tx1);color:var(--bg1);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0">${n}</div>
+      <div><div style="font-size:13px;font-weight:500;margin-bottom:2px">${t}</div><div style="font-size:12px;color:var(--tx2);line-height:1.5">${d}</div></div>
+    </div>`).join('')}
+    <div style="display:flex;gap:12px;padding:.75rem 0">
+      <div style="width:24px;height:24px;border-radius:50%;background:var(--txs);color:var(--bg1);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0">✓</div>
+      <div><div style="font-size:13px;font-weight:500;margin-bottom:2px">Rouvrir le fichier</div><div style="font-size:12px;color:var(--tx2);line-height:1.5">Sauvegardez le fichier HTML et rechargez-le dans votre navigateur. Cette page de configuration disparaîtra.</div></div>
+    </div>
+  </div>
+</div>`}
+
+// ── STUDENT VIEWS ──────────────────────────────────────────────────────
+function vWelcome(){return`<div style="max-width:460px;margin:3rem auto">
+  <div style="margin-bottom:2rem">
+    <div style="font-size:11px;font-weight:500;letter-spacing:.06em;color:var(--tx2);margin-bottom:.5rem">SERIOUS GAME · M1 GRH</div>
+    <h1 style="font-size:26px;font-weight:500;margin-bottom:.75rem">HR Strategy</h1>
+    <p style="font-size:14px;color:var(--tx2);line-height:1.7">Pilotez la DRH de TechCorp sur <strong style="color:var(--tx1)">4 tours</strong>. Chaque tour couvre les 8 thèmes RH. Compétition inter-équipes, événements conjoncturels, joker de rattrapage.</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <button id="w-student" class="btn pri" style="width:100%;justify-content:center;padding:.7rem">Je suis étudiant(e)</button>
+    <button id="w-teacher" class="btn" style="width:100%;justify-content:center;padding:.7rem">Mode enseignant →</button>
+  </div>
+  <div style="margin-top:1.25rem;padding:.75rem;background:var(--bg2);border-radius:var(--r1);font-size:12px;color:var(--tx2)">4 tours · 8 thèmes/tour · 5 KPIs · Joker de rattrapage · Événements déclenchés par l'enseignant</div>
+</div>`}
+
+function vSWait(){return`<div style="max-width:460px;margin:3rem auto;text-align:center">
+  <div style="font-size:36px;margin-bottom:1rem">⏳</div>
+  <h2 style="font-size:18px;font-weight:500;margin-bottom:.5rem">En attente de l'enseignant…</h2>
+  <p style="font-size:13px;color:var(--tx2);margin-bottom:1.5rem">${esc(S.sName)} · Tour ${S.game.turn} terminé</p>
+  ${S.game.turn>0?`<div class="card">${kpiPanel(S.sKpis,true)}</div>`:''}
+  <div style="margin-top:1rem;font-size:12px;color:var(--tx3);display:flex;align-items:center;justify-content:center;gap:6px"><span class="spinner"></span> Synchronisation en temps réel via Firebase</div>
+</div>`}
+
+function vSPlay(){
+  const t=S.game.turn-1;const done=S.sChoices.filter(c=>c>=0).length;
+  const allDone=done===8;const jokerOk=S.game.turn>=2&&!S.sJokerUsed;
+  let acc='';
+  for(let i=0;i<8;i++){
+    const sc2=SC[t][i];const sel=S.sChoices[i];const open=S.sOpen===i;const done2=sel>=0;
+    acc+=`<div style="border:.5px solid var(--bd3);border-radius:var(--r2);margin-bottom:8px;overflow:hidden">
+      <div class="acc-head${done2?' done':''}" data-ai="${i}">
+        <span style="font-size:13px;min-width:18px">${done2?'✓':(i+1)}</span>
+        <span class="tag" style="background:var(--bg2);color:var(--tx2)">${TI[i]} ${TN[i]}</span>
+        <span style="flex:1;font-size:12px;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 6px">${done2?sc2.ch[sel].l.slice(0,34)+'…':sc2.t.slice(0,34)}</span>
+        <span style="font-size:11px;color:var(--tx3)">${open?'▲':'▼'}</span>
+      </div>
+      ${open?`<div style="padding:.75rem 1rem;border-top:.5px solid var(--bd3)">
+        <p style="font-size:13px;color:var(--tx2);margin-bottom:.75rem;line-height:1.6">${sc2.x}</p>
+        ${sc2.ch.map((c,ci)=>`<button class="choice${sel===ci?' sel':''}" data-ti="${i}" data-ci="${ci}" ${sel>=0&&sel!==ci?'disabled':''}>${String.fromCharCode(65+ci)}. ${c.l}${c.risky?` <span class="tag" style="background:var(--bgw);color:var(--txw)">⚠ risqué</span>`:''}</button>`).join('')}
+        ${sel>=0?`<div style="margin-top:.6rem;padding:.6rem .75rem;background:var(--bg2);border-radius:var(--r1);font-size:12px;color:var(--tx2);line-height:1.5">💬 ${sc2.ch[sel].f}</div>`:''}
+      </div>`:''}
+    </div>`;
+  }
+  return`<div style="max-width:920px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+      <div><strong style="font-size:14px">${esc(S.sName)}</strong> <span class="tag" style="background:var(--bgi);color:var(--txi);margin-left:6px">Tour ${S.game.turn}/4</span></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:var(--tx2)">${done}/8 traités</span>
+        <div style="width:80px;height:4px;background:var(--bg2);border-radius:99px;overflow:hidden"><div style="width:${(done/8)*100}%;height:4px;background:var(--tx1);border-radius:99px"></div></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:190px 1fr;gap:1rem">
+      <div>
+        <div class="card" style="margin-bottom:.75rem">${kpiPanel(S.sKpis,true)}</div>
+        ${jokerOk?`<div class="card" style="border-color:var(--bdw)">
+          <div style="font-size:12px;font-weight:500;margin-bottom:.3rem">Joker de rattrapage</div>
+          <div style="font-size:11px;color:var(--tx2);margin-bottom:.6rem;line-height:1.4">+15 pts sur l'indicateur de votre choix. Utilisable une seule fois.</div>
+          <button id="joker-open" class="btn warn" style="width:100%;justify-content:center;font-size:12px">Utiliser le joker</button>
+        </div>`:S.sJokerUsed?`<div style="font-size:12px;color:var(--tx2);padding:.75rem;background:var(--bg2);border-radius:var(--r1)">Joker utilisé ✓</div>`:`<div style="font-size:12px;color:var(--tx2);padding:.75rem;background:var(--bg2);border-radius:var(--r1)">Joker disponible au tour 2</div>`}
+        ${S.sJokerMode?`<div style="margin-top:.75rem;padding:.75rem;background:var(--bgw);border-radius:var(--r1);border:.5px solid var(--bdw)">
+          <div style="font-size:12px;font-weight:500;color:var(--txw);margin-bottom:.5rem">Choisir l'indicateur</div>
+          ${KD.map(kd=>`<button class="btn" data-jkpi="${kd.k}" style="width:100%;justify-content:space-between;margin-bottom:4px;font-size:12px">${kd.l} <span style="color:var(--tx2)">${Math.round(S.sKpis[kd.k])} → ${Math.round(cl(S.sKpis[kd.k]+15))}</span></button>`).join('')}
+          <button id="joker-cancel" class="btn" style="width:100%;justify-content:center;margin-top:4px;font-size:12px">Annuler</button>
+        </div>`:''}
+      </div>
+      <div>
+        ${acc}
+        <div style="display:flex;justify-content:flex-end;margin-top:.5rem">
+          <button id="submit-play" class="btn pri" ${!allDone?'disabled':''}>Soumettre ce tour →</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function vSDone(){return`<div style="max-width:460px;margin:3rem auto;text-align:center">
+  <div style="font-size:32px;margin-bottom:1rem">✓</div>
+  <h2 style="font-size:18px;font-weight:500;margin-bottom:.5rem">Tour ${S.game.turn} soumis !</h2>
+  <p style="font-size:13px;color:var(--tx2);margin-bottom:1.5rem">En attente de la clôture par l'enseignant…</p>
+  <div class="card">${kpiPanel(S.sKpis)}</div>
+  <div style="margin-top:1rem;font-size:12px;color:var(--tx3);display:flex;align-items:center;justify-content:center;gap:6px"><span class="spinner"></span> En temps réel</div>
+</div>`}
+
+function vSRecap(){
+  const s=sc(S.sKpis);const g=gr(s);
+  const prev=S.sHistory.length>1?S.sHistory[S.sHistory.length-2].kpisAfter:IK;
+  return`<div style="max-width:640px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px">
+      <div><div style="font-size:12px;color:var(--tx2)">Tour ${S.sHistory.length} terminé</div><h2 style="font-size:20px;font-weight:500">${esc(S.sName)}</h2></div>
+      <div style="font-size:36px;font-weight:500">${s} <span style="font-size:14px;color:${g.c}">${g.l}</span></div>
+    </div>
+    <div class="card" style="margin-bottom:1rem">
+      <div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.05em">Évolution des indicateurs</div>
+      ${KD.map(kd=>{const v=Math.round(S.sKpis[kd.k]);const pv=prev[kd.k]||0;const d=v-pv;const p=Math.min(100,(v/150)*100);return`<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:13px;color:var(--tx2)">${kd.l}</span><span style="font-size:13px;font-weight:500">${v} <span style="font-size:11px;color:${d>0?'var(--txs)':d<0?'var(--txd)':'var(--tx2)'}">${d>0?'+'+d:d}</span></span></div>
+        <div class="kbar-bg"><div class="kbar" style="width:${p}%;background:${kd.c}"></div></div>
+      </div>`;}).join('')}
+    </div>
+    <div class="card" style="margin-bottom:1rem">
+      <div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.05em">Classement intermédiaire</div>
+      ${S.allTeams.slice(0,10).map((t,i)=>{const ts=sc(t.kpis);const me=t.n===S.sName;return`<div class="lb-row" style="${me?'background:var(--bgi);margin:0 -.25rem;padding:.55rem .75rem;border-radius:var(--r1)':''}">
+        <span style="font-size:13px;font-weight:500;width:20px;color:${i<3?'#BA7517':'var(--tx2)'}">${i+1}</span>
+        <span style="flex:1;font-weight:${me?500:400}">${esc(t.n)}${me?' (vous)':''}</span>
+        <span style="font-size:13px;font-weight:500">${ts}</span>
+      </div>`;}).join('')}
+    </div>
+    ${S.game.turn<4?`<div style="display:flex;justify-content:flex-end"><button id="s-ready-next" class="btn pri">Prêt pour le tour ${S.game.turn+1} →</button></div>`:`<div class="card" style="text-align:center">
+      <div style="font-size:20px;margin-bottom:.5rem">🏁</div>
+      <div style="font-size:16px;font-weight:500;margin-bottom:.25rem">Simulation terminée !</div>
+      <div style="font-size:13px;color:var(--tx2)">Score final : ${s} pts · ${g.t}</div>
+    </div>`}
+  </div>`;
+}
+
+// ── TEACHER VIEWS ──────────────────────────────────────────────────────
+function vTLogin(){return`<div style="max-width:340px;margin:4rem auto">
+  <h2 style="font-size:20px;font-weight:500;margin-bottom:1.5rem">Mode enseignant</h2>
+  <div class="card">
+    <label style="display:block;font-size:13px;font-weight:500;margin-bottom:.5rem">Mot de passe</label>
+    <input type="password" id="tp-input" style="margin-bottom:.75rem" placeholder="${PASS}"/>
+    ${S.tErr?`<div style="font-size:12px;color:var(--txd);margin-bottom:.5rem">${S.tErr}</div>`:''}
+    <button id="tp-btn" class="btn pri">Accéder →</button>
+  </div>
+  <button id="tp-back" class="btn" style="margin-top:.75rem">← Retour</button>
+</div>`}
+
+function vTDash(){
+  const g=S.game;const teams=S.allTeams;
+  const submitted=teams.filter(t=>t.h&&t.h.length>=g.turn&&g.turn>0).length;
+  return`<div style="max-width:800px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-size:11px;font-weight:500;letter-spacing:.06em;color:var(--tx2)">ENSEIGNANT · HR STRATEGY</div>
+        <h2 style="font-size:20px;font-weight:500">Tableau de bord session</h2>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button id="t-refresh" class="btn" style="font-size:12px">↻ Actualiser</button>
+        <button id="t-back" class="btn" style="font-size:12px">← Déconnexion</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1rem">
+      <div style="background:var(--bg2);border-radius:var(--r1);padding:1rem"><div style="font-size:12px;color:var(--tx2)">Tour actuel</div><div style="font-size:24px;font-weight:500">${g.turn}/4</div></div>
+      <div style="background:var(--bg2);border-radius:var(--r1);padding:1rem"><div style="font-size:12px;color:var(--tx2)">Statut</div><div style="font-size:14px;font-weight:500;color:${g.turn===0?'var(--tx2)':g.open?'var(--txs)':'var(--txd)'}">${g.turn===0?'Pas commencé':g.open?'● Tour ouvert':'■ Tour fermé'}</div></div>
+      <div style="background:var(--bg2);border-radius:var(--r1);padding:1rem"><div style="font-size:12px;color:var(--tx2)">Soumissions</div><div style="font-size:24px;font-weight:500">${submitted}<span style="font-size:14px;color:var(--tx2)">/${teams.length}</span></div></div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1.25rem">
+      ${!g.open&&g.turn<4?`<button id="t-open" class="btn suc">▶ Ouvrir le tour ${g.turn+1}</button>`:''}
+      ${g.open?`<button id="t-close" class="btn dan">■ Clore le tour ${g.turn}</button>`:''}
+      ${!g.open&&g.turn>0?`<button id="t-reveal" class="btn">📊 Animer le classement</button>`:''}
+      ${!g.open&&g.turn>0?`<button id="t-debrief" class="btn">📋 Débriefing tour ${g.turn}</button>`:''}
+      ${g.turn>=2&&!g.evDone?.ev_crise&&!g.open?`<button id="t-ev1" class="btn warn">⚡ Crise sectorielle</button>`:''}
+      ${g.turn>=3&&!g.evDone?.ev_rebond&&!g.open?`<button id="t-ev2" class="btn warn">🎲 Opportunité de rebond</button>`:''}
+      <button id="t-reset-all" class="btn dan" style="margin-left:auto;font-size:12px">🗑 Réinitialiser</button>
+    </div>
+    ${teams.length>0?`<div class="card">
+      <div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.05em">Équipes (${teams.length})</div>
+      ${teams.map((t,i)=>{const s=sc(t.kpis);const g2=gr(s);const sub=t.h&&t.h.length>=g.turn&&g.turn>0;return`<div class="lb-row">
+        <span style="font-size:13px;width:20px;font-weight:500;color:${i<3?'#BA7517':'var(--tx2)'}">${i+1}</span>
+        <span style="flex:1;font-size:13px">${esc(t.n)}</span>
+        <span style="font-size:13px;font-weight:500;margin-right:8px">${s}</span>
+        <span class="tag" style="background:${sub?'var(--bgs)':'var(--bg2)'};color:${sub?'var(--txs)':'var(--tx2)'}">${sub?'✓ Soumis':'En attente'}</span>
+      </div>`;}).join('')}
+    </div>`:`<div style="padding:2rem;text-align:center;color:var(--tx2);font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px"><span class="spinner"></span> En attente que des équipes rejoignent…</div>`}
+  </div>`;
+}
+
+function vTReveal(){
+  const teams=[...S.allTeams].sort((a,b)=>sc(b.kpis)-sc(a.kpis));
+  const total=teams.length;const shown=Math.min(S.tReveal+1,total);
+  const display=teams.slice(0,shown).reverse();
+  return`<div style="max-width:640px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:8px">
+      <h2 style="font-size:20px;font-weight:500">Classement — Tour ${S.game.turn}</h2>
+      <div style="display:flex;gap:8px">
+        ${shown<total?`<button id="rev-next" class="btn pri">Révéler suivant →</button>`:`<button id="rev-done" class="btn suc">✓ Terminé</button>`}
+        <button id="rev-close" class="btn">Fermer</button>
+      </div>
+    </div>
+    ${display.length===0?`<div style="text-align:center;padding:3rem;color:var(--tx2)">Cliquez "Révéler suivant" pour dévoiler une équipe à la fois.</div>`:''}
+    <div style="display:flex;flex-direction:column;gap:8px">
+    ${display.map(t=>{
+      const pos=teams.findIndex(x=>x.n===t.n)+1;
+      const s=sc(t.kpis);const g=gr(s);
+      const medal=pos===1?'🥇':pos===2?'🥈':pos===3?'🥉':'';
+      return`<div class="card slide-in" style="${pos<=3?'border-color:var(--bdi)':''}">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:${pos<=3?20:15}px;width:30px;text-align:center">${medal||pos}</span>
+          <div style="flex:1"><div style="font-size:14px;font-weight:500">${esc(t.n)}</div><div style="font-size:12px;color:var(--tx2)">${g.t}</div></div>
+          <div style="font-size:26px;font-weight:500">${s}</div>
+          <span class="tag" style="background:var(--bg2);color:${g.c}">${g.l}</span>
+        </div>
+      </div>`;
+    }).join('')}
+    </div>
+  </div>`;
+}
+
+function vTDebrief(){
+  const turn=S.game.turn;const ti=turn-1;const teams=S.allTeams;
+  const questions=["Qui a pris les décisions les plus risquées ? Quel résultat ?","Quels thèmes ont le plus divisé les groupes ? Pourquoi ?","Quel choix a eu le meilleur rapport impact/coût ce tour ?","Quelle stratégie globale se dessine pour chaque équipe ?"];
+  return`<div style="max-width:900px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+      <h2 style="font-size:20px;font-weight:500">Débriefing — Tour ${turn}</h2>
+      <button id="debrief-close" class="btn">← Retour</button>
+    </div>
+    <div style="overflow-x:auto;margin-bottom:1.5rem">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:580px">
+      <thead><tr>
+        <th style="padding:.5rem .75rem;text-align:left;border-bottom:.5px solid var(--bd2);font-weight:500;white-space:nowrap;min-width:100px">Équipe</th>
+        ${TN.map((n,i)=>`<th style="padding:.4rem;text-align:center;border-bottom:.5px solid var(--bd2);font-weight:500;font-size:11px">${TI[i]}<br>${n.split(' ')[0]}</th>`).join('')}
+        <th style="padding:.4rem .5rem;text-align:right;border-bottom:.5px solid var(--bd2);font-weight:500">Score</th>
+      </tr></thead>
+      <tbody>
+      ${teams.map(team=>{
+        const entry=team.h&&team.h[ti];const choices=entry?entry.choices:Array(8).fill(-1);
+        return`<tr>
+          <td style="padding:.45rem .75rem;border-bottom:.5px solid var(--bd3);font-weight:500;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis">${esc(team.n)}</td>
+          ${SC[ti].map((_,i)=>{
+            const ci=choices[i];const c=ci>=0?SC[ti][i].ch[ci]:null;
+            const tot=c?c.e.reduce((s,v)=>s+v,0):null;
+            const bg=tot===null?'transparent':tot>=5?'var(--bgs)':tot<=-5?'var(--bgd)':'var(--bg2)';
+            const col=tot===null?'var(--tx3)':tot>=5?'var(--txs)':tot<=-5?'var(--txd)':'var(--tx2)';
+            return`<td style="padding:.4rem .3rem;text-align:center;border-bottom:.5px solid var(--bd3)">
+              ${ci>=0?`<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-weight:500;background:${bg};color:${col}">${String.fromCharCode(65+ci)}</span>`:'—'}
+            </td>`;
+          }).join('')}
+          <td style="padding:.4rem .5rem;text-align:right;border-bottom:.5px solid var(--bd3);font-weight:500">${sc(team.kpis)}</td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>
+    </div>
+    <div class="card">
+      <div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.05em">Questions de débriefing</div>
+      ${questions.map((q,i)=>`<div style="display:flex;gap:8px;padding:.5rem 0;${i<questions.length-1?'border-bottom:.5px solid var(--bd3)':''}">
+        <span style="font-size:13px;color:var(--tx2);min-width:16px">${i+1}.</span>
+        <span style="font-size:13px">${q}</span>
+      </div>`).join('')}
+    </div>
+    <div style="margin-top:.75rem;font-size:11px;color:var(--tx2)">Vert = impact total ≥ +5 · Rouge = impact total ≤ −5</div>
+  </div>`;
+}
+
+// ── EVENTS HANDLER ─────────────────────────────────────────────────────
+function attach(){
+  const $=id=>document.getElementById(id);
+
+  $('w-student')?.addEventListener('click',()=>{S.view='student';S.sPhase='name';renderSName()});
+  $('w-teacher')?.addEventListener('click',()=>{S.view='teacher';render()});
+
+  function renderSName(){
+    document.getElementById('R').innerHTML=`<div style="max-width:460px;margin:3rem auto">
+      <h2 style="font-size:20px;font-weight:500;margin-bottom:1.5rem">Votre équipe</h2>
+      <div class="card">
+        <label style="display:block;font-size:13px;font-weight:500;margin-bottom:.5rem">Nom de l'équipe</label>
+        <input type="text" id="sn-input" placeholder="ex : Les RH de Choc, Groupe 3…" style="margin-bottom:.75rem" maxlength="35"/>
+        ${S.err?`<div style="font-size:12px;color:var(--txd);margin-bottom:.5rem">${S.err}</div>`:''}
+        <button id="sn-btn" class="btn pri">Rejoindre la session →</button>
+      </div>
+    </div>`;
+    const inp=document.getElementById('sn-input');
+    inp.value=S.sName;
+    inp.addEventListener('input',e=>{S.sName=e.target.value.trim();S.err=''});
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('sn-btn')?.click()});
+    inp.focus();
+    document.getElementById('sn-btn').addEventListener('click',async()=>{
+      if(!S.sName){S.err='Veuillez saisir un nom.';renderSName();return}
+      // Charger données existantes si l'équipe existe déjà
+      const existing=await fbGet(TK+'/'+tKey(S.sName));
+      if(existing){S.sKpis=existing.kpis||{...IK};S.sHistory=existing.h||[];S.sJokerUsed=existing.j||false;}
+      else{S.sKpis={...IK};S.sHistory=[];S.sJokerUsed=false;}
+      // Charger l'état du jeu
+      const g=await fbGet(GK);if(g)S.game={evDone:{},...g};
+      if(S.game.open&&S.game.turn>0){S.sChoices=Array(8).fill(-1);S.sOpen=0;S.sPhase='play';}
+      else S.sPhase='wait';
+      startStudentListeners();render();
+    });
+  }
+  if(S.view==='student'&&S.sPhase==='name'){renderSName();return;}
+
+  // Student play
+  document.querySelectorAll('.acc-head').forEach(el=>{
+    el.addEventListener('click',()=>{const i=parseInt(el.dataset.ai);S.sOpen=S.sOpen===i?-1:i;render()});
+  });
+  document.querySelectorAll('.choice').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const ti=parseInt(btn.dataset.ti);const ci=parseInt(btn.dataset.ci);
+      const ch=SC[S.game.turn-1][ti].ch[ci];
+      S.sChoices[ti]=ci;S.sKpis=ap(S.sKpis,ch.e);
+      S.sOpen=ti<7?ti+1:-1;render();
+    });
+  });
+  $('joker-open')?.addEventListener('click',()=>{S.sJokerMode=true;render()});
+  $('joker-cancel')?.addEventListener('click',()=>{S.sJokerMode=false;render()});
+  document.querySelectorAll('[data-jkpi]').forEach(btn=>{
+    btn.addEventListener('click',async()=>{
+      const kpi=btn.dataset.jkpi;S.sKpis[kpi]=cl(S.sKpis[kpi]+15);
+      S.sJokerUsed=true;S.sJokerMode=false;
+      S.sHistory.push({turn:S.game.turn,joker:true,kpisAfter:{...S.sKpis}});
+      await saveTeam();render();
+    });
+  });
+  $('submit-play')?.addEventListener('click',async()=>{
+    const btn=$('submit-play');btn.disabled=true;btn.textContent='Envoi…';
+    S.sHistory.push({turn:S.game.turn,choices:[...S.sChoices],kpisAfter:{...S.sKpis}});
+    await saveTeam();S.sPhase='done';render();
+  });
+  $('s-ready-next')?.addEventListener('click',()=>{S.sPhase='wait';render()});
+
+  // Teacher login
+  const ti=$('tp-input');
+  ti?.addEventListener('input',e=>S.tPass=e.target.value);
+  ti?.addEventListener('keydown',e=>{if(e.key==='Enter')$('tp-btn')?.click()});
+  $('tp-btn')?.addEventListener('click',async()=>{
+    if(S.tPass===PASS){
+      S.tPhase='dash';
+      const g=await fbGet(GK);if(g)S.game={evDone:{},...g};
+      await loadAllTeams();
+      startTeacherListeners();render();
+    }else{S.tErr='Mot de passe incorrect.';render();}
+  });
+  $('tp-back')?.addEventListener('click',()=>{S.view='welcome';render()});
+  $('t-back')?.addEventListener('click',()=>{unsub();S.view='welcome';render()});
+  $('t-refresh')?.addEventListener('click',async()=>{await loadAllTeams();render()});
+  $('t-open')?.addEventListener('click',async()=>{
+    await saveGame({turn:S.game.turn+1,open:true});render();
+  });
+  $('t-close')?.addEventListener('click',async()=>{
+    await saveGame({open:false});await loadAllTeams();render();
+  });
+  $('t-reveal')?.addEventListener('click',()=>{S.tReveal=0;render()});
+  $('t-debrief')?.addEventListener('click',()=>{S.tShowDebrief=true;render()});
+  $('t-reset-all')?.addEventListener('click',async()=>{
+    if(confirm('Effacer toutes les équipes et recommencer ? Cette action est irréversible.')){
+      await fbRemove(TK);await fbRemove(GK);
+      S.game={turn:0,open:false,evDone:{}};S.allTeams=[];render();
+    }
+  });
+
+  async function triggerEvent(evId){
+    await loadAllTeams();
+    const ev=EVENTS.find(e=>e.id===evId);if(!ev)return;
+    const updated=ev.fn(S.allTeams);
+    for(const t of updated)await fbSet(TK+'/'+tKey(t.n),t);
+    await saveGame({evDone:{...(S.game.evDone||{}),[evId]:true}});
+    await loadAllTeams();render();
+  }
+  $('t-ev1')?.addEventListener('click',async()=>{const b=$('t-ev1');b.disabled=true;b.textContent='Application…';await triggerEvent('ev_crise');render();});
+  $('t-ev2')?.addEventListener('click',async()=>{const b=$('t-ev2');b.disabled=true;b.textContent='Application…';await triggerEvent('ev_rebond');render();});
+
+  $('rev-next')?.addEventListener('click',()=>{S.tReveal=Math.min(S.tReveal+1,S.allTeams.length-1);render()});
+  $('rev-done')?.addEventListener('click',()=>{S.tReveal=-1;render()});
+  $('rev-close')?.addEventListener('click',()=>{S.tReveal=-1;render()});
+  $('debrief-close')?.addEventListener('click',()=>{S.tShowDebrief=false;render()});
+}
+
+// ── FIREBASE LISTENERS (temps réel) ───────────────────────────────────
+function startStudentListeners(){
+  unsub();
+  // Écoute les changements d'état du jeu en temps réel
+  const u1=fbListen(GK,async(data)=>{
+    if(!data)return;
+    const prevOpen=S.game.open;const prevTurn=S.game.turn;
+    S.game={evDone:{},...data};
+    if(S.sPhase==='wait'&&S.game.open&&S.game.turn>0&&S.game.turn>prevTurn){
+      S.sChoices=Array(8).fill(-1);S.sOpen=0;S.sPhase='play';render();
+    } else if(S.sPhase==='done'&&prevOpen&&!S.game.open){
+      // Tour clôturé — recharger les données et afficher le récap
+      const saved=await fbGet(TK+'/'+tKey(S.sName));
+      if(saved){S.sKpis=saved.kpis||S.sKpis;S.sHistory=saved.h||S.sHistory;S.sJokerUsed=saved.j||S.sJokerUsed;}
+      await loadAllTeams();S.sPhase='recap';render();
+    }
+  });
+  S.unsubs.push(u1);
+}
+
+function startTeacherListeners(){
+  unsub();
+  // Écoute les nouvelles équipes et soumissions en temps réel
+  const u1=fbListen(TK,async(data)=>{
+    if(!data){S.allTeams=[];render();return;}
+    S.allTeams=Object.values(data).filter(t=>t&&t.n).sort((a,b)=>sc(b.kpis)-sc(a.kpis));
+    if(S.view==='teacher'&&S.tPhase==='dash'&&S.tReveal<0&&!S.tShowDebrief)render();
+  });
+  const u2=fbListen(GK,(data)=>{
+    if(!data)return;
+    S.game={evDone:{},...data};
+  });
+  S.unsubs.push(u1,u2);
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────
+(async()=>{
+  try{
+    // Toujours afficher la page en premier
+    render();
+    if(!CONFIG_OK)return;
+    // Charger Firebase
+    const ok=await initFirebase();
+    if(!ok)return;
+    // Charger l'état du jeu
+    try{
+      const g=await fbGet(GK);
+      if(g)S.game={evDone:{},...g};
+    }catch(e){console.warn('Impossible de charger l\'état du jeu:',e);}
+    render();
+  }catch(e){
+    console.error('Erreur init:',e);
+    document.getElementById('R').innerHTML=`<div style="max-width:500px;margin:3rem auto;font-family:system-ui,sans-serif">
+      <div style="background:#fcebeb;border:1px solid rgba(163,45,45,.4);border-radius:12px;padding:1.25rem">
+        <div style="font-size:14px;font-weight:500;color:#791f1f;margin-bottom:.5rem">Erreur au démarrage</div>
+        <div style="font-size:13px;color:#791f1f;margin-bottom:.75rem;line-height:1.6">${e.message||'Erreur inconnue'}</div>
+        <div style="font-size:12px;color:#791f1f;margin-bottom:.75rem;line-height:1.6">Si vous voyez une erreur Firebase, vérifiez que :<br>
+        1. La Realtime Database est activée dans votre projet Firebase<br>
+        2. L'URL <code>databaseURL</code> est correcte dans la config<br>
+        3. Les règles de la base sont en mode "test" (lecture/écriture autorisées)</div>
+        <button onclick="location.reload()" style="padding:.4rem .9rem;border:1px solid rgba(163,45,45,.4);border-radius:8px;background:transparent;color:#791f1f;cursor:pointer;font-size:13px">↻ Réessayer</button>
+      </div>
+    </div>`;
+  }
+})();
+</script>
+</body>
+</html>
